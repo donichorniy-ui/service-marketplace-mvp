@@ -3,85 +3,51 @@
 <head>
 <meta charset="UTF-8">
 <title>Маркетплейс задач — DEMO</title>
-
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background: #f6f6f6;
-    padding: 16px;
-}
-.container {
-    max-width: 420px;
-    margin: 0 auto;
-    background: #fff;
-    padding: 20px;
-    border-radius: 14px;
-}
-h2 {
-    text-align: center;
-}
-.block {
-    margin-bottom: 16px;
-}
-label {
-    font-weight: 600;
-    margin-bottom: 6px;
-    display: block;
-}
-input, select, textarea, button {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-}
-button {
-    background: #2aabee;
-    color: #fff;
-    font-weight: bold;
-    border: none;
-}
-.status {
-    margin-top: 10px;
-    text-align: center;
-}
-.success { color: green; }
-.error { color: red; }
+body{font-family:Arial;background:#f6f6f6;padding:16px}
+.container{max-width:420px;margin:0 auto;background:#fff;padding:20px;border-radius:14px}
+h2{text-align:center}
+.block{margin-bottom:16px}
+label{display:block;font-weight:600;margin-bottom:6px}
+input,select,textarea,button{width:100%;padding:12px;font-size:16px;border-radius:10px;border:1px solid #ccc}
+button{background:#2aabee;color:#fff;font-weight:bold;border:none}
+.status{margin-top:10px;text-align:center}
+.success{color:green}
+.error{color:red}
 </style>
 </head>
-
 <body>
 
 <div class="container">
-    <h2>Создание заявки</h2>
+  <h2>Создание заявки</h2>
 
-    <div class="block">
-        <label>Услуга</label>
-        <select id="service">
-            <option>Сантехника</option>
-            <option>Мелкий бытовой ремонт</option>
-        </select>
-    </div>
+  <div class="block">
+    <label>Услуга</label>
+    <select id="service">
+      <option>Сантехника</option>
+      <option>Мелкий бытовой ремонт</option>
+    </select>
+  </div>
 
-    <div class="block">
-        <label>Описание</label>
-        <textarea id="description" rows="4"></textarea>
-    </div>
+  <div class="block">
+    <label>Описание</label>
+    <textarea id="description" rows="4"></textarea>
+  </div>
 
-    <div class="block">
-        <label>Цена (UZS)</label>
-        <input id="price" type="number">
-    </div>
+  <div class="block">
+    <label>Цена (UZS)</label>
+    <input id="price" type="number">
+  </div>
 
-    <div class="block">
-        <label>Телефон</label>
-        <input id="contact" type="tel">
-    </div>
+  <div class="block">
+    <label>Телефон</label>
+    <input id="contact" type="tel">
+  </div>
 
-    <div class="block">
-        <button id="submit">Отправить заявку</button>
-        <div id="status" class="status"></div>
-    </div>
+  <div class="block">
+    <button id="submit">Отправить заявку</button>
+    <div id="status" class="status"></div>
+  </div>
 </div>
 
 <script>
@@ -90,52 +56,46 @@ const ADMIN_CHAT_ID = "5950245139";
 
 let counter = 0;
 
-document.getElementById("submit").onclick = async () => {
-    const status = document.getElementById("status");
+document.getElementById("submit").onclick = () => {
+  const status = document.getElementById("status");
+  const service = document.getElementById("service").value;
+  const desc = document.getElementById("description").value.trim();
+  const price = document.getElementById("price").value.trim();
+  const phone = document.getElementById("contact").value.trim();
 
-    const service = serviceEl.value;
-    const desc = description.value.trim();
-    const price = priceEl.value.trim();
-    const phone = contact.value.trim();
+  if (!desc || !price || !phone) {
+    status.textContent = "Заполните все поля";
+    status.className = "status error";
+    return;
+  }
 
-    if (!desc || !price || !phone) {
-        status.textContent = "Заполните все поля";
-        status.className = "status error";
-        return;
-    }
+  counter++;
+  const order = "#" + String(counter).padStart(3, "0");
 
-    counter++;
-    const order = "#" + String(counter).padStart(3, "0");
-
-    const text =
+  const text =
 `Новая заявка ${order}
 Услуга: ${service}
 Описание: ${desc}
 Цена: ${price}
-Контакт: ${phone}`;
+Контакт: ${phone}
+Статус: В ожидании подтверждения`;
 
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        mode: "no-cors",   // 🔑 КЛЮЧЕВОЙ МОМЕНТ
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            chat_id: ADMIN_CHAT_ID,
-            text: text
-        })
-    });
+  const url =
+`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage` +
+`?chat_id=${ADMIN_CHAT_ID}` +
+`&text=${encodeURIComponent(text)}`;
 
-    status.textContent = `Заявка ${order} отправлена`;
-    status.className = "status success";
+  // GET-запрос — РАБОТАЕТ НА GITHUB PAGES
+  const img = new Image();
+  img.src = url;
 
-    description.value = "";
-    priceEl.value = "";
-    contact.value = "";
+  status.textContent = `Заявка ${order} отправлена`;
+  status.className = "status success";
+
+  document.getElementById("description").value = "";
+  document.getElementById("price").value = "";
+  document.getElementById("contact").value = "";
 };
-
-const serviceEl = document.getElementById("service");
-const description = document.getElementById("description");
-const priceEl = document.getElementById("price");
-const contact = document.getElementById("contact");
 </script>
 
 </body>
