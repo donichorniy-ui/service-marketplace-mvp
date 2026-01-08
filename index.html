@@ -10,64 +10,39 @@ body {
     background: #f6f6f6;
     padding: 16px;
 }
-
 .container {
     max-width: 420px;
     margin: 0 auto;
-    background: #ffffff;
+    background: #fff;
     padding: 20px;
     border-radius: 14px;
 }
-
 h2 {
-    font-size: 22px;
-    margin-bottom: 16px;
     text-align: center;
 }
-
 .block {
-    margin-bottom: 18px;
+    margin-bottom: 16px;
 }
-
 label {
-    display: block;
-    font-size: 16px;
     font-weight: 600;
     margin-bottom: 6px;
+    display: block;
 }
-
-input,
-select,
-textarea,
-button {
+input, select, textarea, button {
     width: 100%;
-    font-size: 16px;
     padding: 12px;
+    font-size: 16px;
     border-radius: 10px;
     border: 1px solid #ccc;
 }
-
-textarea {
-    resize: none;
-}
-
 button {
     background: #2aabee;
     color: #fff;
-    font-size: 17px;
     font-weight: bold;
     border: none;
-    cursor: pointer;
 }
-
-button:disabled {
-    background: #9ecdf0;
-    cursor: not-allowed;
-}
-
 .status {
-    margin-top: 12px;
-    font-size: 15px;
+    margin-top: 10px;
     text-align: center;
 }
 .success { color: green; }
@@ -78,112 +53,89 @@ button:disabled {
 <body>
 
 <div class="container">
-
     <h2>Создание заявки</h2>
 
     <div class="block">
         <label>Услуга</label>
         <select id="service">
-            <option value="Сантехника">Сантехника</option>
-            <option value="Мелкий бытовой ремонт">Мелкий бытовой ремонт</option>
+            <option>Сантехника</option>
+            <option>Мелкий бытовой ремонт</option>
         </select>
     </div>
 
     <div class="block">
-        <label>Описание задачи</label>
-        <textarea id="description" rows="4"
-        placeholder="Кратко опишите, что нужно сделать"></textarea>
+        <label>Описание</label>
+        <textarea id="description" rows="4"></textarea>
     </div>
 
     <div class="block">
-        <label>Стоимость (UZS)</label>
-        <input id="price" type="number" placeholder="Например: 150000">
+        <label>Цена (UZS)</label>
+        <input id="price" type="number">
     </div>
 
     <div class="block">
-        <label>Контактный телефон</label>
-        <input id="contact" type="tel" placeholder="+998 90 123 45 67">
+        <label>Телефон</label>
+        <input id="contact" type="tel">
     </div>
 
     <div class="block">
         <button id="submit">Отправить заявку</button>
         <div id="status" class="status"></div>
     </div>
-
 </div>
 
 <script>
-/* ===== DEMO НАСТРОЙКИ (ЗАВТРА УБЕРЁМ В DJANGO) ===== */
 const BOT_TOKEN = "8512972671:AAHKjr5FX6W1rDaAkt0M4h1LdY-ii-BElco";
 const ADMIN_CHAT_ID = "5950245139";
 
-/* ===== ЛОГИКА DEMO ===== */
-let orderCounter = 0;
+let counter = 0;
 
-async function sendTask(service, description, price, contact) {
-    orderCounter++;
-    const orderNumber = "#" + orderCounter.toString().padStart(3, "0");
-
-    const payload = {
-        chat_id: ADMIN_CHAT_ID,
-        text:
-`Новая заявка ${orderNumber}
-Услуга: ${service}
-Описание: ${description}
-Цена: ${price} UZS
-Контакт: ${contact}
-Статус: В ожидании подтверждения`,
-        reply_markup: JSON.stringify({
-            inline_keyboard: [
-                [{ text: "Подтвердить заявку", callback_data: "confirm_" + orderNumber }]
-            ]
-        })
-    };
-
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    });
-
-    return orderNumber;
-}
-
-/* ===== КНОПКА ===== */
-document.getElementById("submit").addEventListener("click", async () => {
-    const btn = document.getElementById("submit");
+document.getElementById("submit").onclick = async () => {
     const status = document.getElementById("status");
 
-    const service = document.getElementById("service").value;
-    const description = document.getElementById("description").value.trim();
-    const price = document.getElementById("price").value.trim();
-    const contact = document.getElementById("contact").value.trim();
+    const service = serviceEl.value;
+    const desc = description.value.trim();
+    const price = priceEl.value.trim();
+    const phone = contact.value.trim();
 
-    if (!description || !price || !contact) {
+    if (!desc || !price || !phone) {
         status.textContent = "Заполните все поля";
         status.className = "status error";
         return;
     }
 
-    btn.disabled = true;
-    status.textContent = "Отправка заявки...";
-    status.className = "status";
+    counter++;
+    const order = "#" + String(counter).padStart(3, "0");
 
-    try {
-        const orderNumber = await sendTask(service, description, price, contact);
-        status.textContent = `Заявка ${orderNumber} успешно отправлена`;
-        status.className = "status success";
+    const text =
+`Новая заявка ${order}
+Услуга: ${service}
+Описание: ${desc}
+Цена: ${price}
+Контакт: ${phone}`;
 
-        document.getElementById("description").value = "";
-        document.getElementById("price").value = "";
-        document.getElementById("contact").value = "";
-    } catch (e) {
-        status.textContent = "Ошибка отправки. Попробуйте позже.";
-        status.className = "status error";
-    }
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        mode: "no-cors",   // 🔑 КЛЮЧЕВОЙ МОМЕНТ
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            chat_id: ADMIN_CHAT_ID,
+            text: text
+        })
+    });
 
-    btn.disabled = false;
-});
+    status.textContent = `Заявка ${order} отправлена`;
+    status.className = "status success";
+
+    description.value = "";
+    priceEl.value = "";
+    contact.value = "";
+};
+
+const serviceEl = document.getElementById("service");
+const description = document.getElementById("description");
+const priceEl = document.getElementById("price");
+const contact = document.getElementById("contact");
 </script>
 
 </body>
