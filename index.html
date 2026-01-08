@@ -1,37 +1,23 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <title>Service Marketplace</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-</head>
-<body>
-
-<h2>Разместить заказ</h2>
-
-<input id="title" placeholder="Название услуги"><br><br>
-<textarea id="desc" placeholder="Описание"></textarea><br><br>
-<button onclick="sendOrder()">Отправить</button>
-
 <script>
-  const tg = window.Telegram.WebApp;
-  tg.expand();
+document.getElementById('submit-button').addEventListener('click', function() {
+    const title = document.getElementById('title-input').value;
+    const description = document.getElementById('description-input').value;
 
-  const API_URL = https://script.google.com/macros/s/AKfycbyce_0aVg5wEpZEZdK8vNUFiXni6XRfSY-EfhuNoRzq8St8x2FR3CCgbdA2pzQcoSnTGg/exec;
-
-  function sendOrder() {
-    fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        telegram_id: tg.initDataUnsafe.user.id,
-        role: "customer",
-        title: document.getElementById("title").value,
-        description: document.getElementById("desc").value
-      })
-    }).then(() => alert("Заказ отправлен 🚀"));
-  }
+    fetch('http://127.0.0.1:8000/api/jobs/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            title: title,
+            description: description
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert('Услуга добавлена!');
+        console.log(data);
+    })
+    .catch(error => console.error('Ошибка:', error));
+});
 </script>
-
-</body>
-</html>
