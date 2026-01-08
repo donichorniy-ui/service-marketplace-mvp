@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Service Marketplace</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    h1 {
+      color: #2a9d8f;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Marketplace работает 🚀</h1>
+<p>Mini App успешно запущен</p>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.expand();
+  console.log(tg.initDataUnsafe.user);
+</script>
+
+</body>
+</html>
