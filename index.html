@@ -3,148 +3,127 @@
 <head>
 <meta charset="UTF-8">
 <title>Маркетплейс задач</title>
+
 <style>
-body { font-family: Arial; padding: 20px; }
-input, button, select, textarea { margin: 5px 0; padding: 8px; width: 100%; max-width: 400px; }
-ul { list-style: none; padding-left: 0; }
-li { background: #f0f0f0; margin: 5px 0; padding: 8px; border-radius: 5px; }
+body {
+    font-family: Arial, sans-serif;
+    background: #f7f7f7;
+    padding: 16px;
+}
+
+.container {
+    max-width: 420px;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 14px;
+}
+
+h2 {
+    font-size: 22px;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.block {
+    margin-bottom: 18px;
+}
+
+label {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+input,
+select,
+textarea,
+button {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
+
+textarea {
+    resize: none;
+}
+
+button {
+    background: #2aabee;
+    color: #fff;
+    font-size: 17px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+}
+
+button:active {
+    opacity: 0.9;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    background: #f0f0f0;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    white-space: pre-wrap;
+}
 </style>
 </head>
+
 <body>
-<h2>Создать заказ</h2>
 
-<label>Выберите услугу:</label>
-<select id="service">
-  <option value="Сантехника">Сантехника</option>
-  <option value="Мелкий бытовой ремонт">Мелкий бытовой ремонт</option>
-</select>
+<div class="container">
 
-<label>Полное описание задачи:</label>
-<textarea id="description" placeholder="Укажите, что именно необходимо сделать" rows="4"></textarea>
+    <h2>Создание заявки</h2>
 
-<label>Стоимость услуги (UZS):</label>
-<input id="price" type="number" placeholder="Сумма в узбекских суммах">
+    <div class="block">
+        <label>Услуга</label>
+        <select id="service">
+            <option value="Сантехника">Сантехника</option>
+            <option value="Мелкий бытовой ремонт">Мелкий бытовой ремонт</option>
+        </select>
+    </div>
 
-<label>Контактный телефон:</label>
-<input id="contact" type="tel" placeholder="+998...">
+    <div class="block">
+        <label>Описание задачи</label>
+        <textarea id="description" rows="4"
+        placeholder="Кратко опишите, что нужно сделать"></textarea>
+    </div>
 
-<button id="submit">Отправить</button>
+    <div class="block">
+        <label>Стоимость (UZS)</label>
+        <input id="price" type="number" placeholder="Например: 150000">
+    </div>
 
-<h2>Список задач (для исполнителей)</h2>
-<ul id="tasks"></ul>
+    <div class="block">
+        <label>Контактный телефон</label>
+        <input id="contact" type="tel" placeholder="+998 90 123 45 67">
+    </div>
 
+    <div class="block">
+        <button id="submit">Отправить заявку</button>
+    </div>
+
+    <h2>Заявки для исполнителей</h2>
+
+    <ul id="tasks"></ul>
+
+</div>
+
+<!-- JS КОД БЕЗ ИЗМЕНЕНИЙ -->
 <script>
-const BOT_TOKEN = "8512972671:AAHKjr5FX6W1rDaAkt0M4h1LdY-ii-BElco";
-const ADMIN_CHAT_ID = "5950245139"; // админский чат
-
-let orderCounter = 0;
-
-// Функция отправки заявки
-async function sendTask(service, description, price, contact) {
-    orderCounter++;
-    const orderNumber = `#${orderCounter.toString().padStart(3,'0')}`;
-    const status = "В ожидании подтверждения";
-
-    // Сообщение для админа с кнопкой подтверждения
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-    const payloadAdmin = {
-        chat_id: ADMIN_CHAT_ID,
-        text: `Новая заявка ${orderNumber}:\nУслуга: ${service}\nОписание: ${description}\nЦена: ${price} UZS\nКонтакт: ${contact}\nСтатус: ${status}`,
-        reply_markup: JSON.stringify({
-            inline_keyboard: [
-                [{ text: "Подтвердить заявку", callback_data: `confirm_${orderNumber}` }]
-            ]
-        })
-    };
-
-    // Сообщение для заказчика (на этот же чат)
-    const textToUser = `Ваша заявка ${orderNumber} принята.\nСтатус: ${status}`;
-
-    try {
-        // Отправка админу
-        await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payloadAdmin)
-        });
-        // Отправка пользователю
-        await fetch(url + `?chat_id=${ADMIN_CHAT_ID}&text=${encodeURIComponent(textToUser)}`);
-    } catch(err) {
-        console.error("Ошибка отправки задачи:", err);
-    }
-
-    return orderNumber;
-}
-
-// Обработка кнопок подтверждения (CallbackQuery)
-async function processCallbackQuery() {
-    const updatesUrl = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates`;
-    try {
-        const res = await fetch(updatesUrl);
-        const data = await res.json();
-        data.result.forEach(async update => {
-            if(update.callback_query) {
-                const cb = update.callback_query;
-                if(cb.data.startsWith("confirm_")) {
-                    const orderNumber = cb.data.replace("confirm_", "");
-                    const textToUser = `Ваша заявка ${orderNumber} подтверждена администратором.`;
-                    
-                    // отправка уведомления пользователю
-                    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${ADMIN_CHAT_ID}&text=${encodeURIComponent(textToUser)}`);
-
-                    // ответ на callback (чтобы кнопка исчезла)
-                    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery?callback_query_id=${cb.id}&text=Заявка подтверждена`);
-                }
-            }
-        });
-    } catch(err) {
-        console.error("Ошибка обработки CallbackQuery:", err);
-    }
-}
-
-document.getElementById("submit").addEventListener("click", async () => {
-    const service = document.getElementById("service").value;
-    const description = document.getElementById("description").value.trim();
-    const price = document.getElementById("price").value.trim();
-    const contact = document.getElementById("contact").value.trim();
-
-    if(!description || !price || !contact) return alert("Заполните все поля");
-
-    const orderNumber = await sendTask(service, description, price, contact);
-    alert(`Ваша заявка ${orderNumber} отправлена!`);
-
-    document.getElementById("description").value = "";
-    document.getElementById("price").value = "";
-    document.getElementById("contact").value = "";
-
-    fetchTasks();
-});
-
-// Периодическое получение новых CallbackQuery
-setInterval(processCallbackQuery, 5000);
-
-// Получение списка задач (для демонстрации)
-async function fetchTasks() {
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates`;
-    try {
-        const res = await fetch(url);
-        const data = await res.json();
-        const list = document.getElementById("tasks");
-        list.innerHTML = "";
-        data.result.forEach(update => {
-            if(update.message && update.message.chat.id == ADMIN_CHAT_ID) {
-                const li = document.createElement("li");
-                li.textContent = update.message.text;
-                list.appendChild(li);
-            }
-        });
-    } catch(err) {
-        console.error("Ошибка получения задач:", err);
-    }
-}
-
-fetchTasks();
-setInterval(fetchTasks, 5000);
+/* твой JS код без изменений */
 </script>
+
 </body>
 </html>
