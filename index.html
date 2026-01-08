@@ -1,68 +1,77 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Маркетплейс задач</title>
-    <style>
-        body { font-family: Arial; padding: 20px; }
-        input, button { margin: 5px 0; padding: 8px; width: 100%; max-width: 400px; }
-        ul { list-style: none; padding-left: 0; }
-        li { background: #f0f0f0; margin: 5px 0; padding: 8px; border-radius: 5px; }
-    </style>
+<meta charset="UTF-8">
+<title>Маркетплейс задач</title>
+<style>
+body { font-family: Arial; padding: 20px; }
+input, button { margin: 5px 0; padding: 8px; width: 100%; max-width: 400px; }
+ul { list-style: none; padding-left: 0; }
+li { background: #f0f0f0; margin: 5px 0; padding: 8px; border-radius: 5px; }
+</style>
 </head>
 <body>
-    <h2>Создать задачу</h2>
-    <input id="title" placeholder="Название услуги">
-    <input id="description" placeholder="Примечание">
-    <button id="submit">Отправить</button>
+<h2>Создать задачу</h2>
+<input id="title" placeholder="Название услуги">
+<input id="description" placeholder="Примечание">
+<button id="submit">Отправить</button>
 
-    <h2>Список задач (для исполнителей)</h2>
-    <ul id="tasks"></ul>
+<h2>Список задач (для исполнителей)</h2>
+<ul id="tasks"></ul>
 
-    <script>
-        // === Telegram Bot API настройки ===
-        const BOT_TOKEN = "8512972671:AAHKjr5FX6W1rDaAkt0M4h1LdY-ii-BElco";
-        const CHAT_ID = "5950245139";
+<script>
+const BOT_TOKEN = "8512972671:AAHKjr5FX6W1rDaAkt0M4h1LdY-ii-BElco";
+const CHAT_ID = "5950245139";
 
-        // Простое хранение задач в браузере (можно позже сделать через сервер)
-        let tasks = [];
+// Получение последних сообщений от бота
+async function fetchTasks() {
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates`;
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const list = document.getElementById("tasks");
+        list.innerHTML = "";
 
-        function renderTasks() {
-            const list = document.getElementById("tasks");
-            list.innerHTML = "";
-            tasks.forEach(task => {
+        // Проходим по всем сообщениям
+        data.result.forEach(update => {
+            if(update.message && update.message.chat.id == CHAT_ID) {
                 const li = document.createElement("li");
-                li.textContent = `${task.title}: ${task.description}`;
+                li.textContent = update.message.text;
                 list.appendChild(li);
-            });
-        }
-
-        async function sendToTelegram(task) {
-            const text = `Новая задача:\n${task.title}\n${task.description}`;
-            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(text)}`;
-            try {
-                await fetch(url);
-            } catch (err) {
-                console.error("Ошибка отправки в Telegram:", err);
             }
-        }
-
-        document.getElementById("submit").addEventListener("click", () => {
-            const title = document.getElementById("title").value.trim();
-            const description = document.getElementById("description").value.trim();
-            if (!title) return alert("Введите название услуги");
-
-            const task = { title, description };
-            tasks.push(task);
-            renderTasks();
-            sendToTelegram(task);
-
-            document.getElementById("title").value = "";
-            document.getElementById("description").value = "";
         });
+    } catch(err) {
+        console.error("Ошибка получения задач:", err);
+    }
+}
 
-        // Инициализация
-        renderTasks();
-    </script>
+// Отправка новой задачи
+async function sendTask(title, description) {
+    const text = `Новая задача:\n${title}\n${description}`;
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(text)}`;
+    try {
+        await fetch(url);
+    } catch(err) {
+        console.error("Ошибка отправки задачи:", err);
+    }
+}
+
+// Кнопка отправки
+document.getElementById("submit").addEventListener("click", async () => {
+    const title = document.getElementById("title").value.trim();
+    const description = document.getElementById("description").value.trim();
+    if(!title) return alert("Введите название услуги");
+    await sendTask(title, description);
+    document.getElementById("title").value = "";
+    document.getElementById("description").value = "";
+    fetchTasks();
+});
+
+// Инициализация
+fetchTasks();
+
+// Обновление списка каждые 5 секунд
+setInterval(fetchTasks, 5000);
+</script>
 </body>
 </html>
